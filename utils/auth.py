@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import base64
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, base
+from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 import pyotp
@@ -13,7 +13,7 @@ from utils.models import Location, LoginUser, TokenData, NewUser
 from utils.user import get_user
 from utils.location import calculate_locations_weighted_center, is_trusted_location, store_new_trusted_location
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 ALGORITHM = "HS256"
 SECRET_KEY = "0842160add0aa60aaa83f66bce0c9c35efd601522b16f35411965188749684b3"
 

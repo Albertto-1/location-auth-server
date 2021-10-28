@@ -1,6 +1,6 @@
 from typing import Optional
 
-from utils.auth import login_totp, login_location, register_user
+from utils.auth import get_current_user, login_totp, login_location, register_user
 from utils.models import LoginUser, NewUser, TOTPLocation
 from fastapi import FastAPI, Header
 import firebase_admin
@@ -14,8 +14,8 @@ firebase_admin.initialize_app(cred, {
 app = FastAPI()
 
 @app.get("/user")
-async def user_get():
-    return {"message": "Hello World"}
+async def user_get(authorization: Optional[str] = Header(None)):
+    return await get_current_user(authorization)
 
 @app.post("/user")
 async def user_post(user: NewUser):

@@ -64,13 +64,14 @@ async def get_current_user(token: Optional[str] = Depends(oauth2_scheme)):
         tk = token;
         if "Bearer" in token or "bearer" in token:
             tk = token.split(" ")[1]
-        print(token)
         payload = jwt.decode(tk, SECRET_KEY, algorithms=[ALGORITHM])
         user_email = payload.get("sub")
+        print(payload)
         if user_email is None:
             raise credentials_exception
         token_data = TokenData(user_email=user_email)
-    except JWTError:
+    except JWTError as err:
+        print(err)
         raise credentials_exception
     user = get_user(token_data.user_email)
     if user is None:

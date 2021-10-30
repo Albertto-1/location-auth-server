@@ -18,6 +18,7 @@ class User(BaseModel):
     hashed_password: str
     trusted_locations: List[Location]
     totp_secret: str
+    refered_by: Optional[str]
 
 
 class NewUser(BaseModel):
@@ -25,6 +26,7 @@ class NewUser(BaseModel):
     email: str
     password: str
     locations: Optional[List[Location]]
+    refered_by: Optional[str]
 
 
 class LoginUser(BaseModel):

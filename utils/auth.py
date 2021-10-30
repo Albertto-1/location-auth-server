@@ -99,7 +99,8 @@ def register_user(user: NewUser):
                 "email": user.email,
                 "hashed_password": get_password_hash(user.password),
                 "trusted_locations": {db.reference().push().key: location},
-                "totp_secret": base32secret
+                "totp_secret": base32secret,
+                "refered_by": user.refered_by
                 })
             access_token = create_access_token( data={"sub": user.email, "valid_location": True, "base32secret": base32secret})
             return {"access_token": access_token, "token_type": "bearer"}
@@ -108,7 +109,8 @@ def register_user(user: NewUser):
                 "name": user.name,
                 "email": user.email,
                 "hashed_password": get_password_hash(user.password),
-                "totp_secret": base32secret
+                "totp_secret": base32secret,
+                "refered_by": user.refered_by
                 })
             access_token = create_access_token( data={"sub": user.email, "base32secret": base32secret})
             return {"access_token": access_token, "token_type": "bearer"}

@@ -1,3 +1,4 @@
+from re import split
 from typing import List, Optional
 from datetime import datetime, timedelta
 import base64
@@ -60,7 +61,10 @@ async def get_current_user(token: Optional[str] = Depends(oauth2_scheme)):
     if not token:
         raise credentials_exception
     try:
-        payload = jwt.decode(token.split(" ")[1], SECRET_KEY, algorithms=[ALGORITHM])
+        tk = token;
+        if "Bearer" in token:
+            tk = token.split(" ")[1]
+        payload = jwt.decode(tk, SECRET_KEY, algorithms=[ALGORITHM])
         user_email = payload.get("sub")
         if user_email is None:
             raise credentials_exception

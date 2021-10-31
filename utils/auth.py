@@ -12,7 +12,7 @@ from firebase_admin import db
 
 from utils.models import Location, LoginUser, TokenData, NewUser
 from utils.user import get_user
-from utils.location import calculate_locations_weighted_center, is_trusted_location, store_new_trusted_location
+from utils.location import calculate_locations_weighted_center, get_locations_weighted_center, is_trusted_location, store_new_trusted_location, are_valid_locations
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 ALGORITHM = "HS256"
@@ -33,12 +33,29 @@ def get_password_hash(password):
 def authenticate_user_location(user_email: str, password: str, locations: Optional[List[Location]]):
     user = get_user(user_email)
     if not user:
-        return False, None
+        return {
+                "success": False,
+                "user": None,
+                "error": "No existe ese usuario."
+                }
     if not verify_password(password, user.hashed_password):
-        return False, None
-    if locations and is_trusted_location(calculate_locations_weighted_center(locations), user):
-        return True, user
-    return False, user
+        return {
+                "success": False,
+                "user": None,
+                "error": "Email o contraseña incorrectos."
+                }
+    are_valid, why = are_valid_locations(locations)
+    if locations and are_valid and is_trusted_location(calculate_locations_weighted_center(locations), user):
+        return {
+                "success": True,
+                "user": user,
+                "error": None
+                }
+    return {
+            "success": False,
+            "user": user,
+            "error": why
+            }
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
@@ -85,15 +102,7 @@ def register_user(user: NewUser):
     base32secret = base64.b32encode(bytearray(user.password, 'ascii')).decode('utf-8')
     try:
         if user.locations:
-            lat, lon = calculate_locations_weighted_center(user.locations)
-            today = datetime.today().isoformat()
-            location = {
-                    "lat": lat,
-                    "lon": lon,
-                    "acc": 20,
-                    "created_at": today,
-                    "last_login_date": today
-                    }
+            location = get_locations_weighted_center(user.locations)
             db.reference('/users').push({
                 "name": user.name,
                 "email": user.email,
@@ -102,7 +111,11 @@ def register_user(user: NewUser):
                 "totp_secret": base32secret,
                 "refered_by": user.refered_by
                 })
-            access_token = create_access_token( data={"sub": user.email, "valid_location": True, "base32secret": base32secret})
+            access_token = create_access_token( data={
+                "sub": user.email,
+                "base32secret": base32secret,
+                "new_location": location
+                })
             return {"access_token": access_token, "token_type": "bearer"}
         else:
             db.reference('/users').push({
@@ -112,7 +125,11 @@ def register_user(user: NewUser):
                 "totp_secret": base32secret,
                 "refered_by": user.refered_by
                 })
-            access_token = create_access_token( data={"sub": user.email, "base32secret": base32secret})
+            access_token = create_access_token( data={
+                "sub": user.email,
+                "base32secret": base32secret,
+                "new_location": None
+                })
             return {"access_token": access_token, "token_type": "bearer"}
     except Exception as e:
         return f'There was an error: {e}'
@@ -120,10 +137,17 @@ def register_user(user: NewUser):
 
 
 def login_location(login_data: LoginUser):
-    success, user = authenticate_user_location(login_data.email, login_data.password, login_data.locations)
+    auth_result = authenticate_user_location(login_data.email, login_data.password, login_data.locations)
+    success = auth_result['success']
+    user = auth_result['user']
+    error = auth_result['error']
     if not success:
         if user:
-            access_token = create_access_token( data={"sub": user.email, "valid_location": False})
+            access_token = create_access_token( data={
+                "sub": user.email,
+                "trusted_location": False,
+                "error": error
+                })
             return {"access_token": access_token, "token_type": "bearer"}
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -131,7 +155,10 @@ def login_location(login_data: LoginUser):
             headers={"WWW-Authenticate": "Bearer"},
         )
     if user:
-        access_token = create_access_token( data={"sub": user.email, "valid_location": True})
+        access_token = create_access_token( data={
+            "sub": user.email,
+            "trusted_location": True
+            })
         return {"access_token": access_token, "token_type": "bearer"}
     raise HTTPException(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -145,11 +172,20 @@ async def login_totp(totp_location, authorization):
     totp_decoder = pyotp.TOTP(user.totp_secret)
     totp_code = totp_decoder.now() # DELETE
     if totp_decoder.verify(totp_code):
-        if totp_location.locations:
-            store_new_trusted_location(user.id, totp_location.locations)
-            access_token = create_access_token( data={"sub": user.email, "valid_location": True })
+        are_valid, why = are_valid_locations(totp_location.locations)
+        if totp_location.locations and are_valid:
+            location = get_locations_weighted_center(totp_location.locations)
+            store_new_trusted_location(user.id, location)
+            access_token = create_access_token( data={
+                "sub": user.email,
+                "new_location": location
+                })
         else:
-            access_token = create_access_token( data={"sub": user.email })
+            access_token = create_access_token( data={
+                "sub": user.email,
+                "new_location": None,
+                "error": why
+                })
         return {"access_token": access_token, "token_type": "bearer"}
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

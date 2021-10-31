@@ -19,6 +19,17 @@ def calculate_locations_weighted_center(location_list):
         mean_lon += percentage_weight*location.lon
     return mean_lat, mean_lon
 
+def get_locations_weighted_center(location_list):
+    lat, lon = calculate_locations_weighted_center(location_list)
+    today = datetime.today().isoformat()
+    return {
+            "lat": lat,
+            "lon": lon,
+            "acc": 20,
+            "created_at": today,
+            "last_login_date": today
+            }
+
 def calculate_distance_between(locationA, locationB):
     coords_1 = (locationA['lat'], locationA['lon'])
     coords_2 = (locationB.lat, locationB.lon)
@@ -46,15 +57,35 @@ def is_trusted_location(location, user):
         return True
     return False
 
-def store_new_trusted_location(user_id, locations):
-    lat, lon = calculate_locations_weighted_center(locations)
-    today = datetime.today().isoformat()
-    location = {
-            "lat": lat,
-            "lon": lon,
-            "acc": 20,
-            "created_at": today,
-            "last_login_date": today
-            }
+def store_new_trusted_location(user_id, location):
     db.reference(f'/users/{user_id}/trusted_locations').push(location)
+
+def are_valid_locations(location_list):
+    is_mocked = False
+    mean_acc = 0.0
+    mean_speed = 0.0
+    for location in location_list:
+        if location.is_mocked:
+            is_mocked = True
+        mean_acc += location.acc
+        mean_speed += location.speed
+
+    n = len(location_list)
+    mean_acc = mean_acc/n
+    mean_speed = mean_speed/n
+
+    result = True
+    reason = ""
+    if is_mocked:
+        reason += "Tu dispositivo tiene la ubicación hackeada."
+        result = False
+    if mean_acc > 30:
+        reason += " La exactitud es muy baja."
+        result = False
+    if mean_speed > 0.1:
+        reason += " Parece que estas en movimiento."
+        result = False
+
+    return result, reason
+
 

@@ -6,6 +6,8 @@ class Location(BaseModel):
     lat: float
     lon: float
     acc: float
+    is_mocked: Optional[bool]
+    speed: Optional[float]
     weight: Optional[float]
     created_at: Optional[str]
     last_login_date: Optional[str]

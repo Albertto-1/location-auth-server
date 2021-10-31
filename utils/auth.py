@@ -44,12 +44,19 @@ def authenticate_user_location(user_email: str, password: str, locations: Option
                 "error": "Email o contraseña incorrectos"
                 }
     are_valid, why = are_valid_locations(locations)
-    if locations and are_valid and is_trusted_location(calculate_locations_weighted_center(locations), user):
-        return {
-                "success": True,
-                "user": user,
-                "error": None
-                }
+    if locations and are_valid:
+        if is_trusted_location(calculate_locations_weighted_center(locations), user):
+            return {
+                    "success": True,
+                    "user": user,
+                    "error": None
+                    }
+        else: 
+            return {
+                    "success": False,
+                    "user": user,
+                    "error": "No estás en una ubicación confiable."
+                    }
     return {
             "success": False,
             "user": user,

@@ -1,6 +1,6 @@
 from typing import Optional
 
-from utils.auth import get_current_user, login_totp, login_location, register_user
+from utils.auth import get_current_user, login_totp, login_location, register_user, get_token_payload
 from utils.models import LoginUser, NewUser, TOTPLocation
 from fastapi import FastAPI, Header
 import firebase_admin
@@ -26,7 +26,8 @@ app.add_middleware(
 
 @app.get("/user")
 async def user_get(authorization: Optional[str] = Header(None)):
-    return await get_current_user(authorization)
+    payload = get_token_payload(authorization)
+    return await get_current_user(payload)
 
 @app.post("/user")
 async def user_post(user: NewUser):

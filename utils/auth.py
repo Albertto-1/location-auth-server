@@ -189,7 +189,7 @@ async def login_totp(totp_location, authorization):
     # totp_code = totp_decoder.now() # DELETE
     if totp_decoder.verify(totp_code):
         are_valid, why = are_valid_locations(totp_location.locations)
-        if totp_location.locations and are_valid and payload.get("error") is "No estás en una ubicación confiable.":
+        if totp_location.locations and are_valid and payload.get("error") == "No estás en una ubicación confiable.":
             location = get_locations_weighted_center(totp_location.locations)
             store_new_trusted_location(user.id, location)
             access_token = create_access_token( data={
@@ -197,7 +197,7 @@ async def login_totp(totp_location, authorization):
                 "new_location": location
                 })
         else:
-            if are_valid and payload.get("error") is not "No estás en una ubicación confiable.":
+            if are_valid and payload.get("error") != "No estás en una ubicación confiable.":
                 why = payload.get("error")
             access_token = create_access_token( data={
                 "sub": user.email,

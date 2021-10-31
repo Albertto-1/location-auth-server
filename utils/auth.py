@@ -75,7 +75,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 
-async def get_current_user(token: Optional[str] = Depends(oauth2_scheme)):
+def get_token_payload(token: Optional[str] = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="No se pudieron validar tus credenciales",
@@ -88,15 +88,22 @@ async def get_current_user(token: Optional[str] = Depends(oauth2_scheme)):
         if "Bearer" in token or "bearer" in token:
             tk = token.split(" ")[1]
         payload = jwt.decode(tk, SECRET_KEY, algorithms=[ALGORITHM])
-        user_email = payload.get("sub")
-        print(payload)
-        if user_email is None:
-            raise credentials_exception
-        token_data = TokenData(user_email=user_email)
+        return payload
     except JWTError as err:
         print(err)
         raise credentials_exception
-    user = get_user(token_data.user_email)
+
+
+async def get_current_user(payload):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="No se pudieron validar tus credenciales",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    user_email = payload.get("sub")
+    if user_email is None:
+        raise credentials_exception
+    user = get_user(user_email)
     if user is None:
         raise credentials_exception
     return user
@@ -176,12 +183,13 @@ def login_location(login_data: LoginUser):
 
 async def login_totp(totp_location, authorization):
     totp_code = totp_location.totp
-    user = await get_current_user(authorization)
+    payload = get_token_payload(authorization)
+    user = await get_current_user(payload)
     totp_decoder = pyotp.TOTP(user.totp_secret)
     # totp_code = totp_decoder.now() # DELETE
     if totp_decoder.verify(totp_code):
         are_valid, why = are_valid_locations(totp_location.locations)
-        if totp_location.locations and are_valid:
+        if totp_location.locations and are_valid and payload.get("error") is "No estás en una ubicación confiable.":
             location = get_locations_weighted_center(totp_location.locations)
             store_new_trusted_location(user.id, location)
             access_token = create_access_token( data={
@@ -189,6 +197,8 @@ async def login_totp(totp_location, authorization):
                 "new_location": location
                 })
         else:
+            if are_valid and payload.get("error") is not "No estás en una ubicación confiable.":
+                why = payload.get("error")
             access_token = create_access_token( data={
                 "sub": user.email,
                 "new_location": None,

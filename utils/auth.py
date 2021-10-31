@@ -100,7 +100,8 @@ def register_user(user: NewUser):
     if already_exist: return "Error: That email is already registered"
     base32secret = base64.b32encode(bytearray(user.password, 'ascii')).decode('utf-8')
     try:
-        if user.locations:
+        are_valid, why = are_valid_locations(user.locations)
+        if user.locations and are_valid:
             location = get_locations_weighted_center(user.locations)
             db.reference('/users').push({
                 "name": user.name,
@@ -127,7 +128,8 @@ def register_user(user: NewUser):
             access_token = create_access_token( data={
                 "sub": user.email,
                 "base32secret": base32secret,
-                "new_location": None
+                "new_location": None,
+                "error": why
                 })
             return {"access_token": access_token, "token_type": "bearer"}
     except Exception as e:
@@ -169,7 +171,7 @@ async def login_totp(totp_location, authorization):
     totp_code = totp_location.totp
     user = await get_current_user(authorization)
     totp_decoder = pyotp.TOTP(user.totp_secret)
-    totp_code = totp_decoder.now() # DELETE
+    # totp_code = totp_decoder.now() # DELETE
     if totp_decoder.verify(totp_code):
         are_valid, why = are_valid_locations(totp_location.locations)
         if totp_location.locations and are_valid:

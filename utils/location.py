@@ -80,9 +80,9 @@ def are_valid_locations(location_list):
         reason += "Tu dispositivo tiene la ubicación hackeada."
         result = False
     if mean_acc > 30:
-        reason += " La exactitud es muy baja."
+        reason += " La exactitud de la ubicación es muy baja."
         result = False
-    if mean_speed > 0.1:
+    if mean_speed > 1.0:
         reason += " Parece que estas en movimiento."
         result = False
 

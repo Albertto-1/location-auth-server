@@ -36,13 +36,13 @@ def authenticate_user_location(user_email: str, password: str, locations: Option
         return {
                 "success": False,
                 "user": None,
-                "error": "No existe ese usuario."
+                "error": "No existe ese usuario"
                 }
     if not verify_password(password, user.hashed_password):
         return {
                 "success": False,
                 "user": None,
-                "error": "Email o contraseña incorrectos."
+                "error": "Email o contraseña incorrectos"
                 }
     are_valid, why = are_valid_locations(locations)
     if locations and are_valid and is_trusted_location(calculate_locations_weighted_center(locations), user):
@@ -72,7 +72,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 async def get_current_user(token: Optional[str] = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
+        detail="No se pudieron validar tus credenciales",
         headers={"WWW-Authenticate": "Bearer"},
     )
     if not token:
@@ -151,7 +151,7 @@ def login_location(login_data: LoginUser):
             return {"access_token": access_token, "token_type": "bearer"}
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Email o contraseña incorrectos",
             headers={"WWW-Authenticate": "Bearer"},
         )
     if user:
@@ -162,7 +162,7 @@ def login_location(login_data: LoginUser):
         return {"access_token": access_token, "token_type": "bearer"}
     raise HTTPException(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        detail="Unknown error"
+        detail="Error desconocido"
     )
 
 
@@ -189,6 +189,6 @@ async def login_totp(totp_location, authorization):
         return {"access_token": access_token, "token_type": "bearer"}
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="There was an error in the TOTP login"
+        detail="Ocurrió un error."
     )
 

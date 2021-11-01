@@ -18,7 +18,7 @@ def calculate_locations_weighted_center(location_list):
         percentage_weight = location.weight/new_total
         mean_lat += percentage_weight*location.lat
         mean_lon += percentage_weight*location.lon
-    return round(mean_lat, 7), round(mean_lat,7)
+    return round(mean_lat, 7), round(mean_lon,7)
 
 def get_locations_weighted_center(location_list):
     lat, lon = calculate_locations_weighted_center(location_list)

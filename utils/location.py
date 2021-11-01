@@ -49,7 +49,7 @@ def is_trusted_location(location, user):
             "lon": location[1]
             }
     closest_location = get_closest_location(location, trusted_locations)
-    if calculate_distance_between(location, closest_location) <= 20.00:
+    if calculate_distance_between(location, closest_location) <= 24.00:
         today = datetime.today().isoformat()
         db.reference(f'/users/{user.id}/trusted_locations/{closest_location.id}').update({
             "last_login_date": today

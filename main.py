@@ -1,7 +1,7 @@
 from typing import Optional
 
-from utils.auth import get_current_user, login_totp, login_location, register_user, get_token_payload
-from utils.models import LoginUser, NewUser, TOTPLocation
+from utils.auth import get_current_user, login_totp, login_location, register_user, get_token_payload, store_user_feedback
+from utils.models import FeedbackForm, LoginUser, NewUser, TOTPLocation
 from fastapi import FastAPI, Header
 import firebase_admin
 from firebase_admin import credentials
@@ -42,5 +42,5 @@ async def auth_totp(totp_location: TOTPLocation, authorization: Optional[str] = 
     return await login_totp(totp_location, authorization)
 
 @app.post("/user/feedback")
-async def user_feedback():
-    return {"message": "Hello World"}
+async def user_feedback(feedback_form: FeedbackForm, authorization: Optional[str] = Header(None)):
+    return await store_user_feedback(feedback_form, authorization)

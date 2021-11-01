@@ -50,3 +50,13 @@ class TOTPLocation(BaseModel):
     totp: str
     locations: Optional[List[Location]]
 
+
+class FeedbackForm(BaseModel):
+    network_type: str
+    device: str
+    result: str
+    expected_trusted_location: bool
+    with_interference: bool
+    moving: bool
+    locations: List[Location]
+    

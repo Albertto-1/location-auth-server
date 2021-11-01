@@ -210,3 +210,29 @@ async def login_totp(totp_location, authorization):
         detail="Ocurrió un error."
     )
 
+
+async def store_user_feedback(feedback_form, authorization):
+    payload = get_token_payload(authorization)
+    print(payload)
+    user = await get_current_user(payload)
+    print(user)
+    location = None
+    if feedback_form.locations:
+        location = get_locations_weighted_center(feedback_form.locations)
+    today = datetime.today().isoformat()
+    db.reference("/feedbacks").push({
+        "used_id": user.id,
+        "network_type": feedback_form.network_type,
+        "device": feedback_form.device,
+        "result": feedback_form.result,
+        "expected_trusted_location": feedback_form.expected_trusted_location,
+        "with_interference": feedback_form.with_interference,
+        "moving": feedback_form.moving,
+        "location": location,
+        "created_at": today
+        })
+    return {
+            "success": True,
+            "message": "Gracias por tomarte el tiempo de ayudar en este proyecto."
+            }
+

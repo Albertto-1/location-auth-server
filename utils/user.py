@@ -20,6 +20,3 @@ def get_user(email):
         return User(**user)
     return None
 
-def give_feedback(feedback):
-    return feedback
-

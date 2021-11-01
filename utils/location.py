@@ -43,16 +43,23 @@ def get_closest_location(base_location, saved_locations):
     return saved_locations[np.where(a == a.min())[0][0]]
 
 def is_trusted_location(location, user):
-    trusted_locations = user.trusted_locations
+    today = datetime.today().isoformat()
     location = {
             "lat": location[0],
-            "lon": location[1]
-            }
-    closest_location = get_closest_location(location, trusted_locations)
-    if calculate_distance_between(location, closest_location) <= 24.00:
-        today = datetime.today().isoformat()
-        db.reference(f'/users/{user.id}/trusted_locations/{closest_location.id}').update({
+            "lon": location[1],
+            "acc": 40,
+            "created_at": today,
             "last_login_date": today
+            }
+    trusted_locations = user.trusted_locations
+    closest_location = get_closest_location(location, trusted_locations)
+
+    if calculate_distance_between(location, closest_location) <= 24.00:
+        lat, lon = calculate_locations_weighted_center([location,closest_location])
+        db.reference(f'/users/{user.id}/trusted_locations/{closest_location.id}').update({
+            "last_login_date": today,
+            "lat": lat,
+            "lon": lon
             })
         return True
     return False
@@ -79,10 +86,11 @@ def are_valid_locations(location_list):
     if is_mocked:
         reason += "Tu dispositivo tiene la ubicación hackeada."
         result = False
+        return result, reason
     if mean_acc > 30:
         reason += " La exactitud de la ubicación es muy baja."
         result = False
-    if mean_speed > 1.0:
+    if mean_speed > 1.4:
         reason += " Parece que estas en movimiento."
         result = False
 

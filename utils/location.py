@@ -1,4 +1,5 @@
 from datetime import datetime
+from utils.models import Location
 from firebase_admin import db
 from geopy.distance import great_circle
 import numpy as np
@@ -17,7 +18,7 @@ def calculate_locations_weighted_center(location_list):
         percentage_weight = location.weight/new_total
         mean_lat += percentage_weight*location.lat
         mean_lon += percentage_weight*location.lon
-    return mean_lat, mean_lon
+    return round(mean_lat, 7), round(mean_lat,7)
 
 def get_locations_weighted_center(location_list):
     lat, lon = calculate_locations_weighted_center(location_list)
@@ -55,11 +56,11 @@ def is_trusted_location(location, user):
     closest_location = get_closest_location(location, trusted_locations)
 
     if calculate_distance_between(location, closest_location) <= 24.00:
-        lat, lon = calculate_locations_weighted_center([location,closest_location])
+        lat, lon = calculate_locations_weighted_center([Location(**location),closest_location])
         db.reference(f'/users/{user.id}/trusted_locations/{closest_location.id}').update({
             "last_login_date": today,
-            "lat": lat,
-            "lon": lon
+            "lat": round(lat,7),
+            "lon": round(lon,7)
             })
         return True
     return False

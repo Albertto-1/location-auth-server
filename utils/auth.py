@@ -111,7 +111,7 @@ async def get_current_user(payload):
 
 def register_user(user: NewUser):
     already_exist = get_user(user.email)
-    if already_exist: return "Error: That email is already registered"
+    if already_exist: return { "detail": "Este correo ya está registrado" }
     base32secret = base64.b32encode(bytearray(user.password, 'ascii')).decode('utf-8')
     try:
         are_valid, why = are_valid_locations(user.locations)

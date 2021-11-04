@@ -217,9 +217,7 @@ async def login_totp(totp_location, authorization):
 
 async def store_user_feedback(feedback_form, authorization):
     payload = get_token_payload(authorization)
-    print(payload)
     user = await get_current_user(payload)
-    print(user)
     location = None
     if feedback_form.locations:
         location = get_locations_weighted_center(feedback_form.locations)

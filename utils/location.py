@@ -14,19 +14,28 @@ def calculate_locations_weighted_center(location_list):
         new_total += location.weight
     mean_lat = 0
     mean_lon = 0
+    mean_acc = 0
     for location in location_list:
         percentage_weight = location.weight/new_total
         mean_lat += percentage_weight*location.lat
         mean_lon += percentage_weight*location.lon
-    return round(mean_lat, 7), round(mean_lon,7)
+        mean_acc += percentage_weight*location.acc
+    return {
+            "lat": round(mean_lat, 7),
+            "lon": round(mean_lon, 7),
+            "acc": round(mean_acc, 2)
+            }
 
 def get_locations_weighted_center(location_list):
-    lat, lon = calculate_locations_weighted_center(location_list)
+    center = calculate_locations_weighted_center(location_list)
+    lat = center["lat"]
+    lon = center["lon"]
+    acc = center["acc"]
     today = datetime.today().isoformat()
     return {
             "lat": lat,
             "lon": lon,
-            "acc": 20,
+            "acc": acc,
             "created_at": today,
             "last_login_date": today
             }
@@ -48,7 +57,7 @@ def is_trusted_location(location, user):
     location = {
             "lat": location[0],
             "lon": location[1],
-            "acc": 40,
+            "acc": 50,
             "created_at": today,
             "last_login_date": today
             }
@@ -56,11 +65,15 @@ def is_trusted_location(location, user):
     closest_location = get_closest_location(location, trusted_locations)
 
     if calculate_distance_between(location, closest_location) <= 24.00:
-        lat, lon = calculate_locations_weighted_center([Location(**location),closest_location])
+        center = calculate_locations_weighted_center([Location(**location),closest_location])
+        lat = center["lat"]
+        lon = center["lon"]
+        acc = center["acc"]
         db.reference(f'/users/{user.id}/trusted_locations/{closest_location.id}').update({
             "last_login_date": today,
-            "lat": round(lat,7),
-            "lon": round(lon,7)
+            "lat": lat,
+            "lon": lon,
+            "acc": acc
             })
         return True
     return False

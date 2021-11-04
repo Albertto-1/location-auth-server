@@ -45,7 +45,11 @@ def authenticate_user_location(user_email: str, password: str, locations: Option
                 }
     are_valid, why = are_valid_locations(locations)
     if locations and are_valid:
-        if is_trusted_location(calculate_locations_weighted_center(locations), user):
+        center = calculate_locations_weighted_center(locations)
+        lat = center["lat"]
+        lon = center["lon"]
+        # acc = center["acc"]
+        if is_trusted_location((lat, lon), user):
             return {
                     "success": True,
                     "user": user,

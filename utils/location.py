@@ -82,7 +82,7 @@ def optimize_trusted_location(user_id, new_location, trusted_location):
     center = calculate_locations_weighted_center([Location(**rl) for rl in related_locations])
     lat = center["lat"]
     lon = center["lon"]
-    acc = (20/len(related_locations)) + max(10, get_distance_to_farthest(center, related_locations))
+    acc = (20/len(related_locations)) + max(10, get_distance_to_farthest(center, [Location(**rl) for rl in related_locations]))
     db.reference(f'/users/{user_id}/trusted_locations/{trusted_location.id}').update({
             "last_login_date": today,
             "lat": lat,

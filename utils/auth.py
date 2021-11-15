@@ -176,7 +176,7 @@ def login_location(login_data: LoginUser):
             headers={"WWW-Authenticate": "Bearer"},
         )
     if user:
-        if user.is_active:
+        if user.get("is_active"):
             access_token = create_access_token( data={
                 "sub": user.email,
                 "trusted_location": True,

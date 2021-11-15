@@ -21,6 +21,7 @@ class User(BaseModel):
     trusted_locations: List[Location]
     totp_secret: str
     refered_by: Optional[str]
+    is_active: Optional[bool] = True
 
 
 class NewUser(BaseModel):

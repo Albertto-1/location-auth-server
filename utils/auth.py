@@ -127,7 +127,8 @@ def register_user(user: NewUser):
                 "hashed_password": get_password_hash(user.password),
                 "trusted_locations": {db.reference().push().key: location},
                 "totp_secret": base32secret,
-                "refered_by": user.refered_by
+                "refered_by": user.refered_by,
+                "is_active": False
                 })
             access_token = create_access_token( data={
                 "sub": user.email,
@@ -141,7 +142,8 @@ def register_user(user: NewUser):
                 "email": user.email,
                 "hashed_password": get_password_hash(user.password),
                 "totp_secret": base32secret,
-                "refered_by": user.refered_by
+                "refered_by": user.refered_by,
+                "is_active": False
                 })
             access_token = create_access_token( data={
                 "sub": user.email,
@@ -174,10 +176,19 @@ def login_location(login_data: LoginUser):
             headers={"WWW-Authenticate": "Bearer"},
         )
     if user:
-        access_token = create_access_token( data={
-            "sub": user.email,
-            "trusted_location": True
-            })
+        if user.is_active:
+            access_token = create_access_token( data={
+                "sub": user.email,
+                "trusted_location": True,
+                "active_account": user.is_active
+                })
+        else:
+            access_token = create_access_token( data={
+                "sub": user.email,
+                "trusted_location": True,
+                "active_account": user.is_active,
+                "base32secret": user.totp_secret
+                })
         return {"access_token": access_token, "token_type": "bearer"}
     raise HTTPException(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -215,6 +226,9 @@ async def login_totp(totp_location, authorization):
                     "new_location": None,
                     "error": why
                     })
+        db.reference(f'/users/{user.id}').update({
+            "is_active": True,
+            })
         return {"access_token": access_token, "token_type": "bearer"}
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

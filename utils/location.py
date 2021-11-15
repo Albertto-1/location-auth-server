@@ -37,8 +37,15 @@ def get_locations_weighted_center(location_list):
             "lon": lon,
             "acc": acc,
             "created_at": today,
-            "last_login_date": today
-            }
+            "last_login_date": today,
+            "related_locations": [
+                {
+                    "lat": lat,
+                    "lon": lon,
+                    "acc": acc,
+                }
+            ]
+        }
 
 def calculate_distance_between(locationA, locationB):
     coords_1 = (locationA['lat'], locationA['lon'])
@@ -52,12 +59,44 @@ def get_closest_location(base_location, saved_locations):
     a = np.array(distances)
     return saved_locations[np.where(a == a.min())[0][0]]
 
+def get_distance_to_farthest(center, related_locations):
+    distances = []
+    for location in related_locations:
+        distances.append(calculate_distance_between(center, location))
+    a = np.array(distances)
+    return a.max()
+
+def optimize_trusted_location(user_id, new_location, trusted_location):
+    today = datetime.today().isoformat()
+    related_locations = db.reference(f'/users/{user_id}/trusted_locations/{trusted_location.id}/related_locations').get()
+    # related_locations = db.reference(f'/users/{user_id}/trusted_locations/-MoWdLwet_QYy0slYCSK/related_locations').get()
+    if not related_locations:
+        db.reference(f'/users/{user_id}/trusted_locations/{trusted_location.id}').update({
+                "last_login_date": today,
+                "related_locations": [new_location]
+            })
+        return
+    related_locations.append(new_location)
+    if (len(related_locations) > 20):
+        del related_locations[0]
+    center = calculate_locations_weighted_center(related_locations)
+    lat = center["lat"]
+    lon = center["lon"]
+    acc = (20/len(related_locations)) + max(10, get_distance_to_farthest(center, related_locations))
+    db.reference(f'/users/{user_id}/trusted_locations/{trusted_location.id}').update({
+            "last_login_date": today,
+            "lat": lat,
+            "lon": lon,
+            "acc": acc,
+            "related_locations": related_locations
+        })
+
 def is_trusted_location(location, user):
     today = datetime.today().isoformat()
     location = {
-            "lat": location[0],
-            "lon": location[1],
-            "acc": 50,
+            "lat": location.get("lat"),
+            "lon": location.get("lon"),
+            "acc": location.get("acc"),
             "created_at": today,
             "last_login_date": today
             }
@@ -66,17 +105,8 @@ def is_trusted_location(location, user):
         return False
     closest_location = get_closest_location(location, trusted_locations)
 
-    if calculate_distance_between(location, closest_location) <= 24.00:
-        center = calculate_locations_weighted_center([Location(**location),closest_location])
-        lat = center["lat"]
-        lon = center["lon"]
-        acc = center["acc"]
-        db.reference(f'/users/{user.id}/trusted_locations/{closest_location.id}').update({
-            "last_login_date": today,
-            "lat": lat,
-            "lon": lon,
-            "acc": acc
-            })
+    if calculate_distance_between(location, closest_location) <= closest_location.acc:
+        optimize_trusted_location(user.id, location, closest_location)
         return True
     return False
 

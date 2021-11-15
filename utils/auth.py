@@ -48,8 +48,8 @@ def authenticate_user_location(user_email: str, password: str, locations: Option
         center = calculate_locations_weighted_center(locations)
         lat = center["lat"]
         lon = center["lon"]
-        # acc = center["acc"]
-        if is_trusted_location((lat, lon), user):
+        acc = center["acc"]
+        if is_trusted_location({"lat":lat, "lon":lon, "acc":acc}, user):
             return {
                     "success": True,
                     "user": user,

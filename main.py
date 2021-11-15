@@ -1,4 +1,5 @@
 from typing import Optional
+from utils.location import optimize_trusted_location
 
 from utils.auth import get_current_user, login_totp, login_location, register_user, get_token_payload, store_user_feedback
 from utils.models import FeedbackForm, LoginUser, NewUser, TOTPLocation
@@ -23,6 +24,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/test")
+async def test():
+    optimize_trusted_location("-MoWdLxftMRtm88XfVhB",{},{"id":"-MoWdLwet_QYy0slYCSK"})
+    return None
 
 @app.get("/user")
 async def user_get(authorization: Optional[str] = Header(None)):

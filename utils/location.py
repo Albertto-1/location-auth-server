@@ -62,6 +62,8 @@ def is_trusted_location(location, user):
             "last_login_date": today
             }
     trusted_locations = user.trusted_locations
+    if len(trusted_locations) == 0:
+        return False
     closest_location = get_closest_location(location, trusted_locations)
 
     if calculate_distance_between(location, closest_location) <= 24.00:

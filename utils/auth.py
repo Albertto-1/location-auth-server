@@ -203,11 +203,18 @@ async def login_totp(totp_location, authorization):
         else:
             if are_valid and payload.get("error") != "No estás en una ubicación confiable.":
                 why = payload.get("error")
-            access_token = create_access_token( data={
-                "sub": user.email,
-                "new_location": None,
-                "error": why
-                })
+            if payload.get("base32secret"):
+                access_token = create_access_token( data={
+                    "sub": user.email,
+                    "new_location": None,
+                    "base32secret": payload.get("base32secret")
+                    })
+            else:
+                access_token = create_access_token( data={
+                    "sub": user.email,
+                    "new_location": None,
+                    "error": why
+                    })
         return {"access_token": access_token, "token_type": "bearer"}
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

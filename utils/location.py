@@ -79,7 +79,7 @@ def optimize_trusted_location(user_id, new_location, trusted_location):
     related_locations.append(new_location)
     if (len(related_locations) > 20):
         del related_locations[0]
-    center = calculate_locations_weighted_center(related_locations)
+    center = calculate_locations_weighted_center([Location(**rl) for rl in related_locations])
     lat = center["lat"]
     lon = center["lon"]
     acc = (20/len(related_locations)) + max(10, get_distance_to_farthest(center, related_locations))

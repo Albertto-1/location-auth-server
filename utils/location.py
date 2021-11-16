@@ -82,7 +82,7 @@ def optimize_trusted_location(user_id, new_location, trusted_location):
     center = calculate_locations_weighted_center([Location(**rl) for rl in related_locations])
     lat = center["lat"]
     lon = center["lon"]
-    acc = (20/len(related_locations)) + max(10, get_distance_to_farthest(center, [Location(**rl) for rl in related_locations]))
+    acc = (20/len(related_locations)) + max(16, get_distance_to_farthest(center, [Location(**rl) for rl in related_locations]))
     db.reference(f'/users/{user_id}/trusted_locations/{trusted_location.id}').update({
             "last_login_date": today,
             "lat": lat,
@@ -133,7 +133,7 @@ def are_valid_locations(location_list):
         reason += "Tu dispositivo tiene la ubicación hackeada."
         result = False
         return result, reason
-    if mean_acc > 30:
+    if mean_acc > 36:
         reason += " La exactitud de la ubicación es muy baja."
         result = False
     if mean_speed > 1.4:
